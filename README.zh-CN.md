@@ -1,5 +1,9 @@
 # PaperSpine
 
+[English](README.md) | [中文](README.zh-CN.md)
+
+> 英文和中文 README 需要保持内容等价。任何一边更新时，另一边必须在同一次提交中同步更新。
+
 PaperSpine 是一个面向 Codex 和 Claude Code 的论文、报告写作 Skill Suite。
 
 它的核心目标不是“让 AI 直接润色几句话”，而是让 AI 在写作前先理解目标场景、学习优秀样例、确认全文动机，再逐段规划和生成，并把每一处为什么这样写记录下来。

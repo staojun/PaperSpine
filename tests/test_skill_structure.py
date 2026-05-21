@@ -47,6 +47,36 @@ class SkillStructureTests(unittest.TestCase):
     def test_root_skill_is_absent_to_avoid_duplicate_codex_discovery(self) -> None:
         self.assertFalse((ROOT / "SKILL.md").exists())
 
+    def test_readme_language_switch_and_content_parity(self) -> None:
+        english = (ROOT / "README.md").read_text(encoding="utf-8")
+        chinese = (ROOT / "README.zh-CN.md").read_text(encoding="utf-8")
+
+        for text in (english, chinese):
+            self.assertIn("[English](README.md)", text)
+            self.assertIn("[中文](README.zh-CN.md)", text)
+            for fragment in [
+                "dist/codex/paper-spine",
+                "dist/claude/skills",
+                "dist/claude/commands",
+                "install.ps1",
+                "paper-spine-intake",
+                "paper-spine-research",
+                "paper-spine-rewrite",
+                "paper-spine-build",
+                "paper-spine-latex",
+                "paper-spine-audit",
+                "writing_rationale_matrix.md",
+                "translation_package",
+                "artifact_check.py",
+                "latex_guard.py",
+                "word_guard.py",
+            ]:
+                self.assertIn(fragment, text)
+
+        english_sections = [line for line in english.splitlines() if line.startswith("## ")]
+        chinese_sections = [line for line in chinese.splitlines() if line.startswith("## ")]
+        self.assertEqual(len(english_sections), len(chinese_sections))
+
     def test_suite_skills_exist(self) -> None:
         missing = [
             name

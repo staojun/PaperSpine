@@ -1,5 +1,9 @@
 # PaperSpine
 
+[English](README.md) | [中文](README.zh-CN.md)
+
+> The English and Chinese READMEs are maintained as content-equivalent versions. If one document changes, update the other in the same commit.
+
 PaperSpine is a motivation-driven paper and report writing skill suite for Codex and Claude Code.
 
 It is designed for writing tasks where the target format matters: journal papers, conference papers, course or technical reports, reviews, and competition papers. The workflow asks the agent to learn the target scene and strong examples before writing, then records why each manuscript unit is planned or changed.
