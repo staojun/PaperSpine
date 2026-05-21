@@ -30,7 +30,7 @@ class MaterialInventoryTests(unittest.TestCase):
             result = subprocess.run(
                 [
                     sys.executable,
-                    "scripts/material_inventory.py",
+                    "src/scripts/material_inventory.py",
                     str(root),
                     "--output-dir",
                     str(output),

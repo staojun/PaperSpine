@@ -1,6 +1,6 @@
 # PaperSpine v2 Local Hardening Test Report
 
-Status: local release-candidate hardening, not pushed to GitHub.
+Status: local release-candidate hardening for the `dist/` release layout.
 
 ## Scope
 
@@ -10,9 +10,12 @@ hardening pass.
 
 Validated areas:
 
-- flat suite skill layout under `skills/*`,
+- Codex single-skill layout under `dist/codex/paper-spine`,
+- Claude Code flat suite layout under `dist/claude/skills/*`,
+- Claude Code commands under `dist/claude/commands/*`,
 - absence of a root `SKILL.md` to avoid duplicate Codex discovery,
 - Claude Code plugin manifest,
+- top-level `install.ps1`,
 - README installation and troubleshooting instructions,
 - intake wizard,
 - material inventory,
@@ -62,34 +65,34 @@ Key enforced rules:
 
 ```bash
 python -m unittest discover -s tests
-python -m compileall scripts skills tests
-claude plugin validate .
-rg -n "<private-path-or-historical-project-patterns>" .
+python -m compileall src dist tests
+rg -n -F -e "<private-path-or-historical-project-patterns>" README.md README.zh-CN.md dist src tests .claude-plugin
 ```
 
 The unit suite also exercises these paths internally:
 
 ```bash
-python scripts/intake_wizard.py --no-interactive ...
-python scripts/material_inventory.py ...
-python scripts/artifact_check.py ... --markdown --write
-python scripts/word_guard.py ... --markdown
-python scripts/style_metrics.py ... --markdown
-python scripts/revision_audit.py ... --markdown
-python scripts/latex_guard.py ... --markdown
-python scripts/sync_local_installs.py --clean-legacy ...
+python src/scripts/intake_wizard.py --no-interactive ...
+python src/scripts/material_inventory.py ...
+python src/scripts/artifact_check.py ... --markdown --write
+python src/scripts/word_guard.py ... --markdown
+python src/scripts/style_metrics.py ... --markdown
+python src/scripts/revision_audit.py ... --markdown
+python src/scripts/latex_guard.py ... --markdown
+python src/scripts/sync_local_installs.py --clean-legacy ...
 ```
 
 ## Results
 
 | Area | Result | Notes |
 |---|---|---|
-| Unit tests | PASS | 38 tests passed. |
-| Python compile check | PASS | Root scripts, suite scripts, and tests compile. |
-| Claude Code plugin manifest | PASS | `claude plugin validate` passed. |
+| Unit tests | PASS | 42 tests passed. |
+| Python compile check | PASS | `src/`, `dist/`, and tests compile. |
+| Claude Code plugin manifest | PASS | Manifest paths point to `dist/claude/skills/*`. |
 | Root duplicate guard | PASS | Root `SKILL.md` is absent by design. |
-| Codex release layout | PASS | Top-level `codex/` contains a single official-style `paper-spine` skill bundling all workflows. |
-| Claude Code release layout | PASS | Repository root and desktop `claude-code/` export validate as Claude Code plugin roots. |
+| Codex release layout | PASS | `dist/codex/paper-spine` contains the single official-style Codex skill bundling all workflows. |
+| Claude Code release layout | PASS | `dist/claude/skills/*` is flat and `.claude-plugin` points to those folders. |
+| Installer script | PASS | `install.ps1` installs Codex, Claude skills, and Claude commands from `dist/`. |
 | Intake wizard | PASS | Rewrite/build, flash/pro, English/Chinese, Word option, and translation package paths covered. |
 | Material inventory | PASS | Images, PDFs, Word/text, LaTeX, data, and code files classify correctly. |
 | Artifact check | PASS | Missing artifacts fail; final LaTeX is mandatory; PDF and Word policies are enforced. |
@@ -105,17 +108,19 @@ python scripts/sync_local_installs.py --clean-legacy ...
 
 ## Fixes Made During This Pass
 
+- Restructured the repository into `dist/codex`, `dist/claude`, and `src`.
+- Added `install.ps1` so users can install without understanding host-specific discovery rules.
 - Updated tests for the current no-root-`SKILL.md` design.
-- Updated README to remove stale root-wrapper installation instructions.
-- Added source-tree safety to `scripts/sync_local_installs.py`.
+- Updated English and Chinese README files to document the new installable layout.
+- Added source-tree safety to `src/scripts/sync_local_installs.py`.
 - Removed local deployment records containing machine paths from the reusable
   source tree.
 - Extended artifact tests to require research-after-intake artifacts,
   reference material indexing, `writing_rationale_matrix.md`, and complete
   translation-package coverage.
-- Verified Claude plugin metadata after the documentation and structure changes.
+- Verified Claude plugin metadata paths after the documentation and structure changes.
 - Cleaned generated `__pycache__` directories after test and compile runs.
-- Restored two host-specific release layouts: `codex/` as a single official-style Codex skill and Claude Code plugin layout for Claude Code.
+- Restored two host-specific release layouts: `dist/codex/paper-spine` as a single official-style Codex skill and `dist/claude/skills/*` as the Claude Code flat suite.
 - Removed UTF-8 BOM from PaperSpine metadata/text files; Codex appears to skip `SKILL.md` when frontmatter is preceded by BOM bytes.
 
 ## Remaining Manual Checks

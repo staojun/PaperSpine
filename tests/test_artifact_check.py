@@ -96,7 +96,7 @@ INVALID_RATIONALE_MATRIX = """# Writing Rationale Matrix
 def run_check(output_dir: Path, workflow: str, *extra_args: str) -> subprocess.CompletedProcess[str]:
     args = [
         sys.executable,
-        "scripts/artifact_check.py",
+        "src/scripts/artifact_check.py",
         str(output_dir),
         "--workflow",
         workflow,
@@ -149,7 +149,7 @@ class ArtifactCheckTests(unittest.TestCase):
             result = subprocess.run(
                 [
                     sys.executable,
-                    "scripts/artifact_check.py",
+                    "src/scripts/artifact_check.py",
                     str(output),
                     "--workflow",
                     "rewrite_existing",

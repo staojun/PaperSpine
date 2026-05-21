@@ -1,87 +1,79 @@
 # PaperSpine
 
-English | [中文](README.zh-CN.md)
+PaperSpine is a motivation-driven paper and report writing skill suite for Codex and Claude Code.
 
-PaperSpine is a motivation-driven skill suite for academic papers, competition
-papers, technical reports, reviews, and other paper-like writing tasks.
-
-It is not a one-shot polishing prompt. PaperSpine asks the agent to research the
-target scene, learn from strong examples, confirm the controlling motivation,
-design the manuscript unit by unit, write LaTeX, and audit the result.
-
-## Core Idea
-
-PaperSpine follows one principle:
-
-> Learn first. Write later.
-
-The workflow keeps the manuscript centered on motivation, evidence, structure,
-and revision accountability. It is built for users who want to understand why a
-paper is written in a certain way, not only receive a final draft.
-
-## Features
-
-- Four target scenes: `journal`, `conference`, `report/review`, `competition`.
-- Two research tiers: `flash` and `pro`.
-- Two workflows: rewrite an existing draft, or build from a materials folder.
-- English or Chinese final output.
-- Mandatory motivation confirmation after target-scene research.
-- Required writing rationale matrix that explains the writing plan unit by unit.
-- Mandatory LaTeX final output: `paper_rewriting_output/final_paper/main.tex`.
-- PDF compilation when a TeX engine is available.
-- Optional Word output checked by `word_guard.py`.
-- Optional Chinese translation package after English output.
-- Terminal intake UI with a welcome screen, arrow-key navigation, auto-filled
-  project fields, and a browser preview server for visual testing.
+It is designed for writing tasks where the target format matters: journal papers, conference papers, course or technical reports, reviews, and competition papers. The workflow asks the agent to learn the target scene and strong examples before writing, then records why each manuscript unit is planned or changed.
 
 ## Repository Layout
 
-PaperSpine supports Codex and Claude Code, but the install layouts are different.
-
 ```text
-codex/paper-spine/        Codex single-skill layout
-skills/                   Claude Code flat skill suite
-commands/                 Claude Code slash-command helpers
-.claude-plugin/           Claude Code plugin metadata
-scripts/                  shared deterministic helpers
-references/               shared workflow references
-tests/                    local hardening tests
+PaperSpine/
+  dist/
+    codex/
+      paper-spine/              # Codex single-skill distribution
+    claude/
+      skills/                   # Claude Code flat skill suite
+        paper-spine/
+        paper-spine-intake/
+        paper-spine-research/
+        paper-spine-rewrite/
+        paper-spine-build/
+        paper-spine-latex/
+        paper-spine-audit/
+      commands/                 # Claude Code slash-command helpers
+        paperspine.md
+        paperspine-ui.md
+  src/
+    scripts/                    # shared deterministic helpers
+    references/                 # shared workflow references
+    agents/                     # shared agent metadata source
+  .claude-plugin/               # Claude Code plugin metadata
+  install.ps1                   # recommended Windows installer
+  README.md
+  README.zh-CN.md
 ```
 
-The repository root intentionally has no top-level `SKILL.md`. This prevents
-duplicate or generic skill discovery.
+The `dist/` directory is the installable output. The `src/` directory keeps shared scripts and references readable for development.
 
-## Codex Install
+## Quick Install
 
-Codex should install the single official-style skill folder:
-
-```text
-codex/paper-spine
-```
-
-Windows PowerShell:
+On Windows PowerShell:
 
 ```powershell
-git clone https://github.com/WUBING2023/PaperSpine.git "$HOME\PaperSpine"
-New-Item -ItemType Directory -Force -Path "$HOME\.codex\skills"
-Copy-Item -Recurse -Force "$HOME\PaperSpine\codex\paper-spine" "$HOME\.codex\skills\paper-spine"
+git clone https://github.com/WUBING2023/PaperSpine.git
+cd PaperSpine
+.\install.ps1 -Target all
 ```
 
-macOS/Linux:
+Use a narrower target when needed:
 
-```bash
-git clone https://github.com/WUBING2023/PaperSpine.git ~/PaperSpine
-mkdir -p ~/.codex/skills
-cp -R ~/PaperSpine/codex/paper-spine ~/.codex/skills/paper-spine
+```powershell
+.\install.ps1 -Target codex
+.\install.ps1 -Target claude
+.\install.ps1 -Target all -CleanLegacy
 ```
 
-Restart Codex after installation. Invoke the skill with:
+`-CleanLegacy` removes common old PaperSpine folders that caused duplicate discovery, such as nested `PaperSpine`, `PaperSpineV2`, and old `paper-spine-*` copies.
+
+After installing for Codex: **Restart Codex**. Then call the skill with `$paper-spine` or select `paper-spine` from the skill list.
+
+After installing for Claude Code: restart or reload Claude Code, then use `/paperspine`.
+
+## Manual Install
+
+Codex expects one self-contained skill folder:
 
 ```text
-$paper-spine
+dist/codex/paper-spine
 ```
 
-Expected Codex layout:
+Copy it to:
+
+```text
+~/.codex/skills/paper-spine
+```
+
+The final Codex layout should be:
 
 ```text
 ~/.codex/skills/paper-spine/SKILL.md
@@ -89,55 +81,21 @@ Expected Codex layout:
 ~/.codex/skills/paper-spine/scripts/
 ```
 
-Codex uses one bundled skill because Codex skill discovery works best with a
-single self-contained folder for this project.
-
-## Claude Code Install
-
-Claude Code should use the plugin or the flat skill-suite layout. Do not install
-`codex/paper-spine` as a Claude Code plugin.
-
-### Plugin Install
+Claude Code expects flat skill folders plus optional slash commands:
 
 ```text
-/plugin marketplace add https://github.com/WUBING2023/PaperSpine
-/plugin install paper-spine
-/reload-plugins
+dist/claude/skills/*
+dist/claude/commands/*.md
 ```
 
-This exposes the suite skills:
+Copy them to:
 
 ```text
-paper-spine
-paper-spine-intake
-paper-spine-research
-paper-spine-rewrite
-paper-spine-build
-paper-spine-latex
-paper-spine-audit
+~/.claude/skills/
+~/.claude/commands/
 ```
 
-### Flat Skill Fallback
-
-If you do not use the plugin system, copy the suite skills directly:
-
-```bash
-git clone https://github.com/WUBING2023/PaperSpine.git ~/PaperSpine
-mkdir -p ~/.claude/skills ~/.claude/commands
-cp -R ~/PaperSpine/skills/* ~/.claude/skills/
-cp ~/PaperSpine/commands/*.md ~/.claude/commands/
-```
-
-On Windows PowerShell:
-
-```powershell
-git clone https://github.com/WUBING2023/PaperSpine.git "$HOME\PaperSpine"
-New-Item -ItemType Directory -Force -Path "$HOME\.claude\skills", "$HOME\.claude\commands"
-Copy-Item -Recurse -Force "$HOME\PaperSpine\skills\*" "$HOME\.claude\skills\"
-Copy-Item -Force "$HOME\PaperSpine\commands\*.md" "$HOME\.claude\commands\"
-```
-
-Expected Claude Code flat layout:
+The final Claude Code layout should include:
 
 ```text
 ~/.claude/skills/paper-spine/SKILL.md
@@ -146,139 +104,151 @@ Expected Claude Code flat layout:
 ~/.claude/commands/paperspine.md
 ```
 
-After restart, the recommended command is:
+## Claude Code Plugin Install
+
+Claude Code can also use the plugin metadata in `.claude-plugin`.
+
+```text
+/plugin marketplace add https://github.com/WUBING2023/PaperSpine
+/plugin install paper-spine
+/reload-plugins
+```
+
+The plugin manifest points to the flat suite under `dist/claude/skills`, not to the Codex distribution.
+
+## Codex vs Claude Code
+
+| Host | Installable unit | Typical entry | Reason |
+| --- | --- | --- | --- |
+| Codex | `dist/codex/paper-spine` | `$paper-spine` | Codex works best with one bundled skill containing the orchestrator, scripts, and references. |
+| Claude Code | `dist/claude/skills/*` plus `dist/claude/commands/*` | `/paperspine` | Claude Code discovers skills as flat folders and supports slash-command helpers. |
+
+Do not copy the whole repository into a `skills` folder. That is the main cause of duplicated or missing skills.
+
+## Main Workflow
+
+PaperSpine has two equal first-class workflows:
+
+1. **Rewrite Existing**: improve an existing manuscript without treating the task as simple polishing.
+2. **Build From Materials**: build a manuscript or report from a folder containing notes, figures, PDFs, data summaries, partial drafts, and experiment descriptions.
+
+Supported target scenes:
+
+- `journal`: journal paper
+- `conference`: conference paper
+- `report/review`: course report, technical report, or review
+- `competition`: competition paper or competition report
+
+Research tiers:
+
+- `flash`: 3 target-scene examples, 3 recent/high-quality same-field papers, and official requirements.
+- `pro`: 6 target-scene examples, 6 recent/high-quality same-field papers, and official requirements.
+
+Output languages:
+
+- `English`
+- `Chinese`
+
+When English output is selected, PaperSpine can also generate a `translation_package` containing Chinese translations of intermediate artifacts and final Markdown outputs.
+
+## Intake UI
+
+Claude Code can launch the PaperSpine intake flow through:
 
 ```text
 /paperspine
 ```
 
-`/paperspine` starts PaperSpine and automatically launches the intake UI when
-configuration is missing. `/paperspine-ui` is kept as a manual/legacy intake
-launcher.
+The command should launch the PaperSpine intake UI automatically when the host terminal allows it. The fallback is the Python wizard:
 
-## Codex vs Claude Code
-
-| Host | Recommended layout | Main invocation | Why |
-|---|---|---|---|
-| Codex | `codex/paper-spine` | `$paper-spine` | One bundled skill avoids duplicate discovery and includes all workflow logic. |
-| Claude Code | plugin root or `skills/*` flat | `/paperspine` or the `paper-spine` skill | Claude Code discovers skills flat and can also use slash command helpers. |
-
-## Intake UI
-
-The intake wizard is a terminal UI. In Claude Code, `/paperspine` opens it in a
-real PowerShell window so hidden tool execution does not block on stdin.
-
-Keyboard controls:
-
-- `Up/Down`: switch fields.
-- `Left/Right`: switch options.
-- `Enter`: edit or confirm.
-- `S`: save.
-- `Q`: quit.
-
-The UI auto-fills project fields when possible, including draft paths, materials
-folders, URLs, and default special requirements. The underlying configuration
-field for the English-to-Chinese package is `translation_package`.
-
-Visual preview:
-
-```bash
-python scripts/tui_preview_server.py --port 8765
+```powershell
+python src/scripts/intake_wizard.py
 ```
 
-Open `http://127.0.0.1:8765` and `http://127.0.0.1:8765/config`.
+The intake writes:
 
-## Workflows
+```text
+paper_rewriting_output/paper_spine_config.json
+paper_rewriting_output/paper_spine_config.md
+```
 
-### Rewrite Existing
+Preview the TUI locally:
 
-Use this when you already have a draft. PaperSpine creates:
+```powershell
+python src/scripts/tui_preview_server.py --port 8765
+```
 
-- `original_logic_map.md`
-- `research_dossier.md`
-- `motivation_options_after_research.md`
-- `confirmed_motivation.md`
-- `section_blueprints.md`
-- `writing_rationale_matrix.md`
-- `rewrite_matrix.md`
-- `logic_transfer_audit.md`
-- `final_paper/main.tex`
+## Required Artifacts
 
-### Build From Materials
-
-Use this when you have notes, figures, data, reports, partial drafts, PDFs, or
-experiment summaries but no complete paper.
-
-PaperSpine creates:
-
-- `source_inventory.md`
-- `evidence_bank.md`
-- `figure_asset_map.md`
-- `claim_register.md`
-- `research_dossier.md`
-- `section_blueprints.md`
-- `writing_rationale_matrix.md`
-- `final_paper/main.tex`
-
-## Research Tiers
-
-- `flash`: 3 target-scene examples, 3 field examples, and official requirements.
-- `pro`: 6 target-scene examples, 6 field examples, and official requirements.
-
-Official requirements may come from journal author guidelines, conference CFPs,
-school or department pages, course rubrics, competition websites, rule books,
-templates, and official notices.
-
-## Final Artifacts
-
-PaperSpine treats LaTeX as the final required output:
+A complete PaperSpine run should produce a transparent audit trail, not just a final manuscript:
 
 ```text
 paper_rewriting_output/
+  paper_spine_config.json
+  paper_spine_config.md
+  downloaded_references/
+  research_dossier.md
+  motivation_candidates.md
+  confirmed_motivation.md
+  source_inventory.md
+  evidence_bank.md
+  figure_asset_map.md
+  claim_register.md
+  section_blueprint.md
+  writing_rationale_matrix.md
+  rewrite_matrix.md
+  revision_audit.md
   final_paper/
     main.tex
-    paper.pdf        # when a TeX engine is available
-    paper.docx       # optional
+    references.bib
     figures/
-  latex_report.md
-  word_report.md     # when Word output is requested
-  final_artifact_manifest.md
+    paper.docx              # optional Word output
+    paper.pdf               # generated when a LaTeX compiler is available
+  translation_package/       # optional for English output
 ```
 
-If no TeX compiler is available, `main.tex` is still required and
-`latex_report.md` must record that compilation was skipped.
+The central artifact is `writing_rationale_matrix.md`. It must explain the writing plan unit by unit: what the unit does, how it serves the confirmed motivation, what was learned from SOTA or target-scene examples, which evidence supports it, and what final text check should pass.
 
-## Validation
+## Quality Checks
 
-Run the local test suite:
+Run the artifact checker:
 
-```bash
-python -m unittest discover -s tests
+```powershell
+python src/scripts/artifact_check.py paper_rewriting_output --markdown --write
 ```
 
-Check output artifacts:
+For compatibility with copied skill scripts, the same command may appear in skill instructions as:
 
-```bash
+```powershell
 python scripts/artifact_check.py paper_rewriting_output --markdown --write
 ```
 
-Optional checks:
-
-```bash
-python scripts/latex_guard.py paper_rewriting_output/final_paper/main.tex --markdown
-python scripts/word_guard.py paper_rewriting_output/final_paper/paper.docx --markdown
-```
-
-## Local Development Sync
-
-For maintainers working from a checkout:
+Check LaTeX:
 
 ```powershell
-python scripts\sync_local_installs.py --clean-legacy
+python src/scripts/latex_guard.py paper_rewriting_output/final_paper/main.tex --markdown
 ```
 
-This exports the Codex and Claude Code release layouts and updates local
-development installs.
+Check Word output:
+
+```powershell
+python src/scripts/word_guard.py paper_rewriting_output/final_paper/paper.docx --markdown
+```
+
+Run repository tests:
+
+```powershell
+python -m unittest discover -s tests
+```
+
+## What PaperSpine Tries To Prevent
+
+- Direct sentence-by-sentence polishing with no logic change.
+- Treating target journals, competitions, reports, and reviews as the same genre.
+- Writing before confirming the motivation.
+- Adding claims that are not supported by evidence.
+- Producing only `main.tex` without explaining why the paper was written that way.
+- Partial translation packages when the user requested translated intermediate and final artifacts.
 
 ## License
 

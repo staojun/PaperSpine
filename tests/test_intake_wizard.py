@@ -14,7 +14,7 @@ ROOT = Path(__file__).resolve().parents[1]
 
 def run_wizard(stdin: str, output_dir: Path) -> subprocess.CompletedProcess[str]:
     return subprocess.run(
-        [sys.executable, "scripts/intake_wizard.py", "--output-dir", str(output_dir)],
+        [sys.executable, "src/scripts/intake_wizard.py", "--output-dir", str(output_dir)],
         cwd=ROOT,
         text=True,
         input=stdin,
@@ -31,7 +31,7 @@ class IntakeWizardTests(unittest.TestCase):
             result = subprocess.run(
                 [
                     sys.executable,
-                    "scripts/intake_wizard.py",
+                    "src/scripts/intake_wizard.py",
                     "--no-interactive",
                     "--workflow",
                     "build_from_materials",
@@ -141,7 +141,7 @@ class IntakeWizardTests(unittest.TestCase):
             result = subprocess.run(
                 [
                     sys.executable,
-                    "scripts/intake_wizard.py",
+                    "src/scripts/intake_wizard.py",
                     "--no-interactive",
                     "--workflow",
                     "rewrite_existing",
@@ -212,7 +212,7 @@ class IntakeWizardTests(unittest.TestCase):
             result = subprocess.run(
                 [
                     sys.executable,
-                    "scripts/intake_wizard.py",
+                    "src/scripts/intake_wizard.py",
                     "--setup-global",
                     "--no-interactive",
                     "--ui-language",

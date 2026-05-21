@@ -15,13 +15,13 @@
       "category": "writing",
       "homepage": "https://github.com/WUBING2023/PaperSpine",
       "skills": [
-        "./skills/paper-spine",
-        "./skills/paper-spine-intake",
-        "./skills/paper-spine-research",
-        "./skills/paper-spine-rewrite",
-        "./skills/paper-spine-build",
-        "./skills/paper-spine-latex",
-        "./skills/paper-spine-audit"
+        "./dist/claude/skills/paper-spine",
+        "./dist/claude/skills/paper-spine-intake",
+        "./dist/claude/skills/paper-spine-research",
+        "./dist/claude/skills/paper-spine-rewrite",
+        "./dist/claude/skills/paper-spine-build",
+        "./dist/claude/skills/paper-spine-latex",
+        "./dist/claude/skills/paper-spine-audit"
       ]
     }
   ]

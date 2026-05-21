@@ -33,7 +33,7 @@ class WordGuardTests(unittest.TestCase):
             result = subprocess.run(
                 [
                     sys.executable,
-                    "scripts/word_guard.py",
+                    "src/scripts/word_guard.py",
                     str(docx),
                     "--markdown",
                     "--min-chars",
@@ -55,7 +55,7 @@ class WordGuardTests(unittest.TestCase):
             result = subprocess.run(
                 [
                     sys.executable,
-                    "scripts/word_guard.py",
+                    "src/scripts/word_guard.py",
                     str(docx),
                     "--markdown",
                     "--min-chars",

@@ -37,7 +37,7 @@ class SuiteHardeningTests(unittest.TestCase):
     def test_suite_skill_names_are_unique_and_match_directories(self) -> None:
         names: list[str] = []
         for skill in SUITE_SKILLS:
-            text = read(f"skills/{skill}/SKILL.md")
+            text = read(f"dist/claude/skills/{skill}/SKILL.md")
             name = frontmatter_field(text, "name")
             self.assertEqual(name, skill)
             names.append(name)
@@ -45,32 +45,39 @@ class SuiteHardeningTests(unittest.TestCase):
 
     def test_script_copies_match_root_versions(self) -> None:
         copies = {
-            "scripts/intake_wizard.py": [
-                "skills/paper-spine/scripts/intake_wizard.py",
-                "skills/paper-spine-intake/scripts/intake_wizard.py",
+            "src/scripts/intake_wizard.py": [
+                "dist/claude/skills/paper-spine/scripts/intake_wizard.py",
+                "dist/claude/skills/paper-spine-intake/scripts/intake_wizard.py",
+                "dist/codex/paper-spine/scripts/intake_wizard.py",
             ],
-            "scripts/launch_paperspine_ui.ps1": [
-                "skills/paper-spine/scripts/launch_paperspine_ui.ps1",
-                "skills/paper-spine-intake/scripts/launch_paperspine_ui.ps1",
+            "src/scripts/launch_paperspine_ui.ps1": [
+                "dist/claude/skills/paper-spine/scripts/launch_paperspine_ui.ps1",
+                "dist/claude/skills/paper-spine-intake/scripts/launch_paperspine_ui.ps1",
+                "dist/codex/paper-spine/scripts/launch_paperspine_ui.ps1",
             ],
-            "scripts/material_inventory.py": [
-                "skills/paper-spine/scripts/material_inventory.py",
-                "skills/paper-spine-build/scripts/material_inventory.py",
+            "src/scripts/material_inventory.py": [
+                "dist/claude/skills/paper-spine/scripts/material_inventory.py",
+                "dist/claude/skills/paper-spine-build/scripts/material_inventory.py",
+                "dist/codex/paper-spine/scripts/material_inventory.py",
             ],
-            "scripts/artifact_check.py": [
-                "skills/paper-spine/scripts/artifact_check.py",
-                "skills/paper-spine-audit/scripts/artifact_check.py",
+            "src/scripts/artifact_check.py": [
+                "dist/claude/skills/paper-spine/scripts/artifact_check.py",
+                "dist/claude/skills/paper-spine-audit/scripts/artifact_check.py",
+                "dist/codex/paper-spine/scripts/artifact_check.py",
             ],
-            "scripts/word_guard.py": [
-                "skills/paper-spine-latex/scripts/word_guard.py",
-                "skills/paper-spine-audit/scripts/word_guard.py",
+            "src/scripts/word_guard.py": [
+                "dist/claude/skills/paper-spine-latex/scripts/word_guard.py",
+                "dist/claude/skills/paper-spine-audit/scripts/word_guard.py",
+                "dist/codex/paper-spine/scripts/word_guard.py",
             ],
-            "scripts/latex_guard.py": [
-                "skills/paper-spine-latex/scripts/latex_guard.py",
-                "skills/paper-spine-audit/scripts/latex_guard.py",
+            "src/scripts/latex_guard.py": [
+                "dist/claude/skills/paper-spine-latex/scripts/latex_guard.py",
+                "dist/claude/skills/paper-spine-audit/scripts/latex_guard.py",
+                "dist/codex/paper-spine/scripts/latex_guard.py",
             ],
-            "scripts/revision_audit.py": [
-                "skills/paper-spine-audit/scripts/revision_audit.py",
+            "src/scripts/revision_audit.py": [
+                "dist/claude/skills/paper-spine-audit/scripts/revision_audit.py",
+                "dist/codex/paper-spine/scripts/revision_audit.py",
             ],
         }
         for source, targets in copies.items():
@@ -82,6 +89,10 @@ class SuiteHardeningTests(unittest.TestCase):
         text = read("README.md")
         required_fragments = [
             ".claude-plugin",
+            "dist/codex/paper-spine",
+            "dist/claude/skills",
+            "dist/claude/commands",
+            "install.ps1",
             "paper-spine-intake",
             "paper-spine-research",
             "paper-spine-rewrite",
@@ -104,20 +115,20 @@ class SuiteHardeningTests(unittest.TestCase):
             "/plugin marketplace add",
             "/plugin install paper-spine",
             "artifact_check.py paper_rewriting_output --markdown --write",
-            "codex/paper-spine",
+            "dist/codex/paper-spine",
             "/paperspine",
         ]
         missing = [fragment for fragment in required_fragments if fragment not in text]
         self.assertEqual(missing, [])
 
     def test_paperspine_command_is_primary_auto_intake_entry(self) -> None:
-        text = read("commands/paperspine.md")
+        text = read("dist/claude/commands/paperspine.md")
         self.assertIn("description: Start PaperSpine", text)
         self.assertIn("launch the PaperSpine intake UI automatically", text)
         self.assertIn("paper_spine_config.json", text)
         self.assertIn("launch_paperspine_ui.ps1", text)
         self.assertIn("paper-spine` orchestrator", text)
-        legacy = read("commands/paperspine-ui.md")
+        legacy = read("dist/claude/commands/paperspine-ui.md")
         self.assertIn("Prefer `/paperspine`", legacy)
 
     def test_claude_plugin_manifest_uses_flat_suite_skills(self) -> None:
@@ -126,18 +137,18 @@ class SuiteHardeningTests(unittest.TestCase):
         self.assertEqual(plugin["name"], "paper-spine")
         self.assertEqual(marketplace["plugins"][0]["name"], "paper-spine")
         skills = marketplace["plugins"][0]["skills"]
-        expected = [f"./skills/{name}" for name in SUITE_SKILLS]
+        expected = [f"./dist/claude/skills/{name}" for name in SUITE_SKILLS]
         self.assertEqual(skills, expected)
         self.assertTrue((ROOT / ".claude-plugin" / "plugin.json").exists())
         for skill_path in skills:
             self.assertTrue((ROOT / skill_path.removeprefix("./") / "SKILL.md").exists())
     def test_codex_release_layout_uses_single_official_skill_folder(self) -> None:
-        self.assertTrue((ROOT / "codex" / "paper-spine" / "SKILL.md").exists())
-        self.assertTrue((ROOT / "codex" / "paper-spine" / "scripts" / "intake_wizard.py").exists())
-        self.assertTrue((ROOT / "codex" / "paper-spine" / "references" / "writing-rationale-matrix.md").exists())
-        self.assertFalse((ROOT / "codex" / "paper-spine-research" / "SKILL.md").exists())
-        self.assertFalse((ROOT / "codex" / "PaperSpine" / "SKILL.md").exists())
-        self.assertFalse((ROOT / "codex" / "SKILL.md").exists())
+        self.assertTrue((ROOT / "dist" / "codex" / "paper-spine" / "SKILL.md").exists())
+        self.assertTrue((ROOT / "dist" / "codex" / "paper-spine" / "scripts" / "intake_wizard.py").exists())
+        self.assertTrue((ROOT / "dist" / "codex" / "paper-spine" / "references" / "writing-rationale-matrix.md").exists())
+        self.assertFalse((ROOT / "dist" / "codex" / "paper-spine-research" / "SKILL.md").exists())
+        self.assertFalse((ROOT / "dist" / "codex" / "PaperSpine" / "SKILL.md").exists())
+        self.assertFalse((ROOT / "dist" / "codex" / "SKILL.md").exists())
 
     def test_sync_script_exports_expected_layouts_to_temp_dirs(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -148,7 +159,7 @@ class SuiteHardeningTests(unittest.TestCase):
             result = subprocess.run(
                 [
                     sys.executable,
-                    "scripts/sync_local_installs.py",
+                    "src/scripts/sync_local_installs.py",
                     "--clean-legacy",
                     "--desktop-root",
                     str(base / "desktop" / "PaperSpine"),
@@ -166,12 +177,14 @@ class SuiteHardeningTests(unittest.TestCase):
                 check=False,
             )
             self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
-            self.assertTrue((base / "desktop" / "PaperSpine" / "codex" / "paper-spine" / "SKILL.md").exists())
-            self.assertFalse((base / "desktop" / "PaperSpine" / "codex" / "paper-spine-research" / "SKILL.md").exists())
-            self.assertTrue((base / "desktop" / "PaperSpine" / "claude-code" / ".claude-plugin" / "plugin.json").exists())
-            self.assertTrue((base / "desktop" / "PaperSpine" / "claude-code" / "commands" / "paperspine.md").exists())
-            self.assertTrue((base / "desktop" / "PaperSpine" / "claude-code" / "commands" / "paperspine-ui.md").exists())
-            self.assertTrue((base / "desktop" / "PaperSpine" / "claude-code" / "skills" / "paper-spine" / "SKILL.md").exists())
+            self.assertTrue((base / "desktop" / "PaperSpine" / "dist" / "codex" / "paper-spine" / "SKILL.md").exists())
+            self.assertFalse((base / "desktop" / "PaperSpine" / "dist" / "codex" / "paper-spine-research" / "SKILL.md").exists())
+            self.assertTrue((base / "desktop" / "PaperSpine" / ".claude-plugin" / "plugin.json").exists())
+            self.assertTrue((base / "desktop" / "PaperSpine" / "dist" / "claude" / "commands" / "paperspine.md").exists())
+            self.assertTrue((base / "desktop" / "PaperSpine" / "dist" / "claude" / "commands" / "paperspine-ui.md").exists())
+            self.assertTrue((base / "desktop" / "PaperSpine" / "dist" / "claude" / "skills" / "paper-spine" / "SKILL.md").exists())
+            self.assertTrue((base / "desktop" / "PaperSpine" / "src" / "scripts" / "intake_wizard.py").exists())
+            self.assertTrue((base / "desktop" / "PaperSpine" / "install.ps1").exists())
             self.assertFalse((base / "desktop" / "PaperSpine" / "SKILL.md").exists())
             self.assertFalse((base / "codex" / "skills" / "PaperSpine").exists())
             self.assertTrue((base / "codex" / "skills" / "paper-spine" / "SKILL.md").exists())
@@ -179,8 +192,8 @@ class SuiteHardeningTests(unittest.TestCase):
             self.assertTrue((base / "claude" / "skills" / "paper-spine" / "SKILL.md").exists())
             self.assertTrue((base / "claude" / "commands" / "paperspine.md").exists())
             self.assertTrue((base / "claude" / "commands" / "paperspine-ui.md").exists())
-            self.assertTrue((base / "desktop" / "PaperSpine" / "codex").exists())
-            self.assertTrue((base / "desktop" / "PaperSpine" / "claude-code").exists())
+            self.assertFalse((base / "desktop" / "PaperSpine" / "codex").exists())
+            self.assertFalse((base / "desktop" / "PaperSpine" / "claude-code").exists())
             self.assertFalse((base / "codex" / "skills" / "PaperSpineV2").exists())
             self.assertFalse((base / "claude" / "skills" / "PaperSpineV2" / "skills" / "paper-spine" / "SKILL.md").exists())
 
@@ -190,7 +203,7 @@ class SuiteHardeningTests(unittest.TestCase):
             result = subprocess.run(
                 [
                     sys.executable,
-                    "scripts/sync_local_installs.py",
+                    "src/scripts/sync_local_installs.py",
                     "--desktop-root",
                     str(ROOT),
                     "--codex-skills-dir",
@@ -225,14 +238,16 @@ class SuiteHardeningTests(unittest.TestCase):
     def test_plugin_root_has_no_top_level_skill_to_avoid_duplicate_discovery(self) -> None:
         self.assertFalse((ROOT / "SKILL.md").exists())
         self.assertTrue((ROOT / ".claude-plugin" / "plugin.json").exists())
-        self.assertTrue((ROOT / "skills" / "paper-spine" / "SKILL.md").exists())
+        self.assertTrue((ROOT / "dist" / "claude" / "skills" / "paper-spine" / "SKILL.md").exists())
+        for legacy_root in ["codex", "skills", "commands", "scripts", "references"]:
+            self.assertFalse((ROOT / legacy_root).exists(), legacy_root)
 
     def test_suite_install_layout_can_be_copied_to_temp_skills_dir(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             dest = Path(tmp) / "skills"
             dest.mkdir()
             for skill in SUITE_SKILLS:
-                shutil.copytree(ROOT / "skills" / skill, dest / skill)
+                shutil.copytree(ROOT / "dist" / "claude" / "skills" / skill, dest / skill)
             missing = [
                 skill
                 for skill in SUITE_SKILLS
@@ -246,18 +261,17 @@ class SuiteHardeningTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             dest = Path(tmp) / "paper-spine"
             dest.mkdir()
-            for name in ["README.md", "LICENSE", ".gitignore"]:
+            for name in ["README.md", "README.zh-CN.md", "LICENSE", ".gitignore", "install.ps1"]:
                 shutil.copy2(ROOT / name, dest / name)
             shutil.copytree(ROOT / ".claude-plugin", dest / ".claude-plugin")
-            shutil.copytree(ROOT / "references", dest / "references")
-            shutil.copytree(ROOT / "skills", dest / "skills")
-            shutil.copytree(ROOT / "scripts", dest / "scripts")
+            shutil.copytree(ROOT / "dist", dest / "dist")
+            shutil.copytree(ROOT / "src", dest / "src")
             self.assertFalse((dest / "SKILL.md").exists())
             self.assertTrue((dest / ".claude-plugin" / "plugin.json").exists())
-            self.assertTrue((dest / "references" / "task-genre-research.md").exists())
-            self.assertTrue((dest / "skills" / "paper-spine" / "SKILL.md").exists())
-            self.assertTrue((dest / "scripts" / "intake_wizard.py").exists())
-            self.assertTrue((dest / "scripts" / "launch_paperspine_ui.ps1").exists())
+            self.assertTrue((dest / "src" / "references" / "task-genre-research.md").exists())
+            self.assertTrue((dest / "dist" / "claude" / "skills" / "paper-spine" / "SKILL.md").exists())
+            self.assertTrue((dest / "src" / "scripts" / "intake_wizard.py").exists())
+            self.assertTrue((dest / "src" / "scripts" / "launch_paperspine_ui.ps1").exists())
 
 
 if __name__ == "__main__":
