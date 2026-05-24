@@ -11,7 +11,7 @@
       "name": "paper-spine",
       "description": "Motivation-driven paper and report writing skill suite.",
       "source": "./",
-      "version": "2.0.0-rc.3",
+      "version": "3.0.0",
       "category": "writing",
       "homepage": "https://github.com/WUBING2023/PaperSpine",
       "skills": [
