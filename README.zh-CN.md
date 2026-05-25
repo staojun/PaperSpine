@@ -412,3 +412,7 @@ python -m unittest discover -s tests
 ## License
 
 MIT License. See [LICENSE](LICENSE).
+
+---
+
+**独立下载:** [paper-spine-humanize](https://github.com/WUBING2023/PaperSpine/tree/main/dist/claude/skills/paper-spine-humanize) — 自包含降 AI 检测率技能，无需完整套件即可独立使用。
