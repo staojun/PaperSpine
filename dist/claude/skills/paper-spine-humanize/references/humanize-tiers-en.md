@@ -1,90 +1,94 @@
 # AI Humanization Writing Directives (English)
 
-Apply when `humanize_tier` in `paper_spine_config.json` is not `none`.
-Aligned with the 5 core detection dimensions: sentence structure, paragraph
-similarity, information density, connector frequency, and term-context matching.
+Aligned with the 5 core detection dimensions used by major AIGC detection
+systems (sentence-length distribution, paragraph structure similarity,
+information density, connector frequency/distribution, term-context matching).
+
+## Detection Dimensions
+
+| Dim | What It Measures | AI Text Signature |
+|-----|-----------------|-------------------|
+| D1-Sentence Length | Histogram of sentence lengths | AI: 15-25 words, single-peak bell curve; Human: multi-peak (5-8 + 15-25 + 40+) |
+| D2-Paragraph Structure | Cosine similarity of paragraph "grammar skeletons" | AI: 0.7-0.9 (every paragraph = claim-explain-example-summary); Human: 0.2-0.5 |
+| D3-Information Density | Independent information points per 100 words | AI: 65%-75% flat; Human: 40%-85% fluctuating |
+| D4-Connector Freq/Dist | Connectors per 1000 words + paragraph-start ratio | AI: 8-15/1k, uniform distribution; Human: 2-6/1k, clustered at key turns |
+| D5-Term-Context Match | Ratio of terms appearing in "most standard" context | AI: ~100% standard; Human: occasional colloquial substitution |
 
 ## Universal Rules (all tiers)
 
 1. Preserve all LaTeX commands, citation keys, equations, file paths, numeric values
-2. Do not change factual content
+2. Do not change factual content (data, results, conclusions)
 3. Do not add evidence the author has not provided
-4. Keep technical terms as-is (unless heavy tier explicitly allows substitution)
+4. Keep technical terms as-is (unless heavy tier allows substitution)
+5. **Produce humanize_matrix.md in parallel**: one row per writing unit processed
+
+## humanize_matrix.md Format
+
+| Row ID | Manuscript Unit | AI Pattern Found | Detection Dim | Severity | Applied Change | Expected Effect | Teaching Note |
+|--------|----------------|------------------|---------------|----------|---------------|-----------------|---------------|
+| 1 | Abstract | 3 consecutive sentences 18-22 words | D1-Sentence Length | High | Split sentence 2 into 5-word + 25-word | Breaks bell-curve distribution | D1 is the strongest detection signal — fix first |
+| 2 | Intro P1 | Claim-explain-example-summary pattern | D2-Paragraph Structure | High | Rewrite as question-first, no concluding sentence | Grammar skeleton diverges from template | AI paragraph similarity 0.7-0.9 vs human 0.2-0.5 |
+
+Every row must fill all 8 columns. Severity: High / Medium / Low. Detection Dim: D1-D5.
 
 ---
 
 ## light
 
-### Dimension 1: Sentence Structure
-- Every 4 sentences, at least 1 must differ significantly in length (short ≤ 8 words or long ≥ 30 words)
-- No 3 consecutive sentences with length difference under 6 words
-- No two consecutive paragraphs starting with the same sentence pattern
+**Targets**: D4-Connectors, D1-Sentence Length
 
-### Dimension 2: Paragraph Structure
-- No two consecutive paragraphs using the same structural template
-- Available templates: claim-evidence-implication / problem-analysis-conclusion / compare-judge / question-answer / position-counter-synthesis
-- Adjacent paragraphs must use different templates
+### D4 Connectors
+Ban: Firstly/Secondly/Finally, In conclusion/To sum up, Furthermore/Moreover/Additionally, It is worth noting/It should be pointed out. Replace with natural logical flow. Keep under 6 connectors per 1000 words.
 
-### Dimension 3: Information Density
-- No requirement at this tier
-
-### Dimension 4: Connectors
-- Ban: Firstly/Secondly/Finally, In conclusion/To sum up, Furthermore/Moreover/Additionally, It is worth noting/It should be pointed out
-- Replace with natural logical flow between paragraphs
-- Keep connectors under 8 per 1000 words
-
-### Dimension 5: Term-Context Matching
-- No requirement at this tier
+### D1 Sentence Length
+Every 3-4 sentences, one must differ significantly (≤ 8 words or ≥ 30 words). No 3 consecutive sentences with length difference under 6 words.
 
 ---
 
 ## medium (includes all of light + below)
 
-### Dimension 1: Sentence Structure
-- Length distribution must show at least two peaks: one at 6-12 words (short), one at 25-35 words (long)
-- Short sentences ≥ 15% per section
+**Targets**: D2-Paragraph Structure, D3-Information Density, D1-Strengthened
 
-### Dimension 2: Paragraph Structure
-- Each structural template used at most twice in the entire paper
-- Use at least 4 different templates
+### D2 Paragraph Structure
+Use different templates per paragraph. Ban "claim→explain→example→summary" loop:
+- Question-driven: question→analysis→conclusion
+- Compare-judge: view A→view B→differentiate→position
+- Causal chain: observation→cause→inference→verification
+- Abrupt end: deep argument, then stop — no summary
+- Position-counter-synthesis
 
-### Dimension 3: Information Density
-- Core argument paragraphs: density ≥ 80%
-- Transition paragraphs: density ≤ 50%
-- Create high-low-high density alternation
+Each template used at most twice. Adjacent paragraphs must differ.
+
+### D3 Information Density
+- Core argument paragraphs: density 70%-85%, each claim backed by evidence
+- Transition paragraphs: density 40%-50%, 1-2 sentences
 - Density difference between consecutive paragraphs ≥ 15%
 
-### Dimension 4: Connectors
-- Under 6 per 1000 words
-- Connectors only at logical turning points, never at paragraph starts
+### D1 Strengthened
+- No 3 consecutive sentences with length difference under 6 words
+- Mix declarative, rhetorical (1-2/section), and hypothetical constructions
+- Two length-distribution peaks: 6-12 words + 25-35 words
 
-### Dimension 5: Term-Context Matching
-- Inject first-person academic narration ("Our study found", "We observed in experiments")
-- At least 2 instances per 2000 words
+### First-Person
+"We / Our study found / We observed" at method explanations and result analyses. ≥ 2 per 2000 words.
 
 ---
 
 ## heavy (includes all of medium + below)
 
-### Dimension 1: Sentence Structure
-- Three peaks in length distribution: short (4-8 words), medium (12-20 words), long (30+ words)
-- Add inverted sentences and rhetorical questions (1-2 per section)
-- Allow 1-2 intuitive leaps skipping intermediate reasoning
+**Targets**: D5-Term-Context, D2-Structural Variation, D3-Density Variation
 
-### Dimension 2: Paragraph Structure
-- Use 5+ different structural templates
-- Introduction: may lead with problem, not "background→gap→approach→contributions"
-- Discussion: may leave 1-2 questions deliberately open
+### D5 Term-Context Breaking
+At least 1 colloquial-but-accurate substitution per 800 words. Allow occasional informal expression ("in other words", "to put it plainly"). Allow personal commentary after result analyses.
 
-### Dimension 3: Information Density
-- Label every paragraph's density (high/medium/low). No 3 consecutive paragraphs at the same level.
+### D2 Structural Variation
+Introduction: may lead with core problem, not "background→gap→approach→contributions". Methods: may interleave rationale with description. Discussion: may leave 1-2 questions open.
 
-### Dimension 4: Connectors
-- Under 4 per 1000 words
-- Connectors clustered at 2-3 critical logical turns; omitted everywhere else
+### D3 Density Variation
+Label every paragraph density (high/medium/low). No 3 consecutive at same level. Allow 1-2 intuitive leaps.
 
-### Dimension 5: Term-Context Matching
-- Replace 1-2 standard academic terms with accurate-but-colloquial alternatives
-- Allow occasional informal expression ("in other words", "to put it plainly")
-- Allow personal commentary after result analyses
-- At least 1 uncommon-but-precise academic term per 800 words
+### Low-Frequency Vocabulary
+At least 1 uncommon-but-precise academic term per 800 words. Accuracy over frequency.
+
+### Connectors Tightened
+Under 4 per 1000 words. Clustered at 2-3 critical turns only.

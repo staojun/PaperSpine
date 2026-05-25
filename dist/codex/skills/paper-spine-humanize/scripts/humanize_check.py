@@ -1,149 +1,173 @@
 #!/usr/bin/env python3
-"""Validate PaperSpine humanize_matrix.md — check coverage, scan residual AI patterns."""
+"""Validate PaperSpine humanize_matrix.md and scan for remaining AI patterns.
+
+Self-contained — standard library only, no dependencies on other PaperSpine
+modules.  Can be distributed standalone with paper-spine-humanize skill.
+"""
 
 from __future__ import annotations
 
 import argparse
 import json
 import re
+import statistics
 import sys
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from _paper_spine_utils import markdown_tables, read_text, split_paragraphs
 
-CNKI_DIMENSIONS = {
-    "sentence structure",
-    "paragraph similarity",
-    "information density",
-    "connector frequency",
-    "term-context matching",
-}
+# --- self-contained table helpers (no _paper_spine_utils import) ---
 
-HIGH_RISK_CONNECTORS_ZH = [
+def _split_table_line(line: str) -> list[str]:
+    return [c.strip() for c in line.strip().strip("|").split("|")]
+
+
+def _is_sep(cells: list[str]) -> bool:
+    return bool(cells) and all(c and set(c) <= {"-", ":", " "} for c in cells)
+
+
+def _table_rows(text: str) -> tuple[list[str], list[list[str]]]:
+    rows: list[list[str]] = []
+    for raw in text.splitlines():
+        line = raw.strip()
+        if not (line.startswith("|") and line.endswith("|")):
+            continue
+        cells = _split_table_line(line)
+        if _is_sep(cells):
+            continue
+        rows.append(cells)
+    return (rows[0], rows[1:]) if rows else ([], [])
+
+
+def _split_paragraphs(text: str) -> list[str]:
+    parts = re.split(r"\n\s*\n+", text)
+    return [re.sub(r"\s+", " ", p).strip() for p in parts if len(p.strip()) > 50]
+
+
+# --- AI pattern detection ---
+
+AI_CONNECTORS_ZH = [
     "首先", "其次", "再次", "最后", "综上所述", "总而言之", "总的来说",
     "此外", "另外", "不仅如此", "值得注意的是", "需要指出的是", "不容忽视的是",
-    "具有重要意义", "为……奠定基础", "在……的过程中", "不仅……而且",
+    "具有重要意义", "具有重要的理论意义", "具有重要的现实意义",
+    "为……奠定基础", "在……的过程中",
 ]
-HIGH_RISK_CONNECTORS_EN = [
+AI_CONNECTORS_EN = [
     "firstly", "secondly", "thirdly", "finally", "in conclusion", "to sum up",
     "furthermore", "moreover", "additionally", "it is worth noting",
-    "it should be pointed out", "it cannot be ignored",
+    "it should be pointed out", "it cannot be ignored", "plays a crucial role",
+    "has significant implications",
 ]
+
+CNKI_DIMENSIONS = (
+    "sentence structure", "paragraph similarity", "information density",
+    "connector frequency", "term-context matching",
+)
 
 
 @dataclass
 class HumanizeCheckResult:
     path: str
     ok: bool
-    findings: list[str] = field(default_factory=list)
     matrix_rows: int = 0
     manuscript_paragraphs: int = 0
-    residual_connectors: int = 0
+    coverage_ratio: float = 0.0
+    sentence_length_stddev: float = 0.0
+    connector_density: float = 0.0
+    findings: list[str] = field(default_factory=list)
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Validate PaperSpine humanize_matrix.md.")
+    parser = argparse.ArgumentParser(description="Validate PaperSpine humanize_matrix.md")
     parser.add_argument("output_dir", nargs="?", default="paper_rewriting_output")
     parser.add_argument("--json", action="store_true")
     parser.add_argument("--markdown", action="store_true")
-    parser.add_argument("--write", action="store_true")
+    parser.add_argument("--write", action="store_true", help="Write humanize_report.md")
     return parser.parse_args()
 
 
+def sentence_lengths(text: str) -> list[int]:
+    sents = re.split(r"[.。!！?？;；\n]+", text)
+    return [len(s.strip()) for s in sents if 5 < len(s.strip()) < 300]
+
+
 def count_connectors(text: str, lang: str) -> int:
-    patterns = HIGH_RISK_CONNECTORS_ZH if lang == "zh" else HIGH_RISK_CONNECTORS_EN
-    return sum(len(re.findall(re.escape(p), text, re.IGNORECASE)) for p in patterns)
+    pool = AI_CONNECTORS_ZH if lang == "zh" else AI_CONNECTORS_EN
+    return sum(text.count(c) for c in pool)
 
 
-def load_config(out_dir: Path) -> dict:
-    config_path = out_dir / "paper_spine_config.json"
-    if config_path.exists():
-        return json.loads(config_path.read_text(encoding="utf-8"))
-    return {}
-
-
-def check(out_dir: Path) -> HumanizeCheckResult:
-    config = load_config(out_dir)
-    lang = config.get("output_language", "en")
-    findings: list[str] = []
-
-    matrix_path = out_dir / "humanize_matrix.md"
+def check_matrix(matrix_path: Path, manuscript_text: str, lang: str) -> HumanizeCheckResult:
+    result = HumanizeCheckResult(str(matrix_path), False)
     if not matrix_path.exists():
-        return HumanizeCheckResult(str(matrix_path), False, ["humanize_matrix.md not found"])
+        result.findings.append("humanize_matrix.md not found")
+        return result
 
-    matrix_text = matrix_path.read_text(encoding="utf-8", errors="ignore")
-    tables = markdown_tables(matrix_text)
-    if not tables:
-        findings.append("No parseable table in humanize_matrix.md")
+    text = matrix_path.read_text(encoding="utf-8", errors="ignore")
+    header, rows = _table_rows(text)
+    if not header:
+        result.findings.append("humanize_matrix.md has no parseable table")
+        return result
 
-    matrix_rows = len(tables[0]) - 1 if tables else 0
+    result.matrix_rows = len(rows)
+    result.manuscript_paragraphs = len(_split_paragraphs(manuscript_text))
+    if result.manuscript_paragraphs > 0:
+        result.coverage_ratio = result.matrix_rows / result.manuscript_paragraphs
 
-    # Check required columns
-    if tables:
-        header = " ".join(c.lower() for c in tables[0][0])
-        for required in ("ai pattern", "detection dimension", "applied change", "teaching"):
-            if required not in header:
-                findings.append(f"Missing column: {required}")
+    if result.coverage_ratio < 0.5 and result.manuscript_paragraphs > 2:
+        result.findings.append(
+            f"Coverage {result.coverage_ratio:.0%}: {result.matrix_rows} rows for "
+            f"{result.manuscript_paragraphs} paragraphs. Minimum 50%."
 
-    # Count manuscript paragraphs
-    final_paper = out_dir / "final_paper"
-    manuscript_paragraphs = 0
-    if final_paper.is_dir():
-        for tex_file in final_paper.glob("*.tex"):
-            text = tex_file.read_text(encoding="utf-8", errors="ignore")
-            manuscript_paragraphs += len(split_paragraphs(text))
+        )
 
-    # Check coverage: matrix should cover most paragraphs
-    if manuscript_paragraphs > 0 and matrix_rows < manuscript_paragraphs * 0.5:
-        findings.append(f"Low coverage: {matrix_rows} matrix rows for ~{manuscript_paragraphs} manuscript paragraphs")
+    header_text = " ".join(c.lower() for c in header)
+    for col in ("ai pattern", "detection dim", "severity", "applied change", "teaching"):
+        if col not in header_text:
+            result.findings.append(f"Missing column: {col}")
 
-    # Check severity distribution
-    if tables:
-        severity_count = {"high": 0, "medium": 0, "low": 0}
-        for row in tables[0][1:]:
-            joined = " ".join(row).lower()
-            if "high" in joined:
-                severity_count["high"] += 1
-            elif "medium" in joined:
-                severity_count["medium"] += 1
-            elif "low" in joined:
-                severity_count["low"] += 1
-        if severity_count["high"] == 0 and matrix_rows > 2:
-            findings.append("No high-severity patterns found — matrix may be under-reporting")
+    empty_rows = [i for i, row in enumerate(rows, start=1) if any(not c.strip() for c in row)]
+    if empty_rows:
+        result.findings.append(f"Rows with empty cells: {empty_rows[:8]}")
 
-    # Check dimension coverage
-    if tables:
-        dimension_hits = set()
-        for row in tables[0][1:]:
-            joined = " ".join(row).lower()
-            for dim in CNKI_DIMENSIONS:
-                if dim in joined:
-                    dimension_hits.add(dim)
-        missing_dims = CNKI_DIMENSIONS - dimension_hits
-        if missing_dims:
-            findings.append(f"Dimensions not covered: {', '.join(sorted(missing_dims))}")
+    severity_counts = {"high": 0, "medium": 0, "low": 0}
+    dim_hits: set[str] = set()
+    for row in rows:
+        joined = " ".join(row).lower()
+        for sev in severity_counts:
+            if sev in joined:
+                severity_counts[sev] += 1
+        for dim in CNKI_DIMENSIONS:
+            if dim in joined:
+                dim_hits.add(dim)
+    if result.matrix_rows > 2 and severity_counts["high"] == 0:
+        result.findings.append("No high-severity patterns found — matrix may be under-reporting")
 
-    # Scan manuscript for residual AI connectors
-    residual = 0
-    if final_paper.is_dir():
-        for tex_file in final_paper.glob("*.tex"):
-            text = tex_file.read_text(encoding="utf-8", errors="ignore")
-            residual += count_connectors(text, lang)
+    missing_dims = set(CNKI_DIMENSIONS) - dim_hits
+    if missing_dims:
+        result.findings.append(f"Dimensions not covered: {', '.join(sorted(missing_dims))}")
 
-    if residual > 0 and lang == "zh":
-        para_count = max(1, manuscript_paragraphs)
-        if residual / para_count > 1.0:
-            findings.append(f"High residual connector density: {residual} connectors in {manuscript_paragraphs} paragraphs ({residual / para_count:.1f}/paragraph)")
+    lengths = sentence_lengths(manuscript_text)
+    if len(lengths) > 2:
+        result.sentence_length_stddev = round(statistics.stdev(lengths), 2)
+        if result.sentence_length_stddev < 6:
+            result.findings.append(
+                f"Sentence length stddev = {result.sentence_length_stddev} — too uniform. "
+                "AI text typically < 6; human text > 10."
+            )
 
-    return HumanizeCheckResult(
-        str(matrix_path),
-        not findings,
-        findings,
-        matrix_rows,
-        manuscript_paragraphs,
-        residual,
-    )
+    char_count = len(manuscript_text)
+    conn_count = count_connectors(manuscript_text, lang)
+    if char_count > 0:
+        result.connector_density = round(conn_count / (char_count / 1000), 2)
+        threshold = 8
+        if result.connector_density > threshold:
+            result.findings.append(
+                f"Connector density = {result.connector_density}/1k chars (threshold: {threshold}). "
+                "High connector density is a strong AI signal."
+            )
+
+    result.ok = not result.findings
+    return result
 
 
 def to_markdown(result: HumanizeCheckResult) -> str:
@@ -153,7 +177,9 @@ def to_markdown(result: HumanizeCheckResult) -> str:
         f"- Matrix path: `{result.path}`",
         f"- Matrix rows: {result.matrix_rows}",
         f"- Manuscript paragraphs: {result.manuscript_paragraphs}",
-        f"- Residual AI connectors: {result.residual_connectors}",
+        f"- Coverage: {result.coverage_ratio:.0%}",
+        f"- Sentence length stddev: {result.sentence_length_stddev}",
+        f"- Connector density: {result.connector_density}/1k chars",
         f"- Status: {'PASS' if result.ok else 'FAIL'}",
         "",
         "## Findings",
@@ -167,13 +193,36 @@ def to_markdown(result: HumanizeCheckResult) -> str:
 def main() -> int:
     args = parse_args()
     out_dir = Path(args.output_dir)
-    result = check(out_dir)
+    matrix_path = out_dir / "humanize_matrix.md"
+
+    if not matrix_path.exists():
+        print(f"Matrix not found: {matrix_path}", file=sys.stderr)
+        return 2
+
+    lang = "zh"
+    config_path = out_dir / "paper_spine_config.json"
+    if config_path.exists():
+        try:
+            config = json.loads(config_path.read_text(encoding="utf-8"))
+            lang = config.get("output_language", "zh")
+        except json.JSONDecodeError:
+            pass
+
+    manuscript_text = ""
+    final_paper = out_dir / "final_paper"
+    if final_paper.is_dir():
+        for f in final_paper.glob("*.tex"):
+            manuscript_text += f.read_text(encoding="utf-8", errors="ignore") + "\n"
+
+    result = check_matrix(matrix_path, manuscript_text, lang)
 
     if args.json:
         print(json.dumps({
             "ok": result.ok, "matrix_rows": result.matrix_rows,
-            "manuscript_paragraphs": result.manuscript_paragraphs,
-            "residual_connectors": result.residual_connectors,
+            "paragraphs": result.manuscript_paragraphs,
+            "coverage": result.coverage_ratio,
+            "sentence_stddev": result.sentence_length_stddev,
+            "connector_density": result.connector_density,
             "findings": result.findings,
         }, ensure_ascii=False, indent=2))
     if args.markdown or not args.json:
