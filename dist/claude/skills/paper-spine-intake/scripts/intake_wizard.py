@@ -934,11 +934,13 @@ def render_keyboard_frame(
     title = style("PaperSpine", "1;97", color) + style("  " + tr(config.ui_language, "banner"), muted, color)
     subtitle = style(tr(config.ui_language, "keyboard_subtitle"), muted, color)
     help_line = style(tr(config.ui_language, "keyboard_help"), muted, color)
+    cwd_line = style("  " + str(Path.cwd()), muted, color)
 
     frame = [
         top,
         style("│", accent, color) + pad_ansi(title, width - 2) + style("│", accent, color),
         style("│", accent, color) + pad_ansi(subtitle, width - 2) + style("│", accent, color),
+        style("│", accent, color) + pad_ansi(cwd_line, width - 2) + style("│", accent, color),
         split_top,
         style("│", accent, color)
         + pad_ansi(style(tr(config.ui_language, "fields_header"), muted, color), left_w)
