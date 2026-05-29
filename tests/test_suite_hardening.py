@@ -258,8 +258,8 @@ class SuiteHardeningTests(unittest.TestCase):
         self.assertIn("paper_spine_config.json", text)
         self.assertIn("launch_paperspine_ui.ps1", text)
         self.assertIn("paper-spine` orchestrator", text)
-        legacy = read("dist/claude/commands/paperspine-legacy.md")
-        self.assertIn("DEPRECATED", legacy)
+        self.assertFalse((ROOT / "dist" / "claude" / "commands" / "paperspine-legacy.md").exists(),
+                         "paperspine-legacy command should be removed")
 
     def test_claude_plugin_manifest_uses_flat_suite_skills(self) -> None:
         plugin = json.loads(read(".claude-plugin/plugin.json"))
@@ -335,7 +335,7 @@ class SuiteHardeningTests(unittest.TestCase):
             self.assertTrue((base / "desktop" / "PaperSpine" / "dist" / "codex" / "skills" / "paper-spine-research" / "SKILL.md").exists())
             self.assertTrue((base / "desktop" / "PaperSpine" / ".claude-plugin" / "plugin.json").exists())
             self.assertTrue((base / "desktop" / "PaperSpine" / "dist" / "claude" / "commands" / "paperspine.md").exists())
-            self.assertTrue((base / "desktop" / "PaperSpine" / "dist" / "claude" / "commands" / "paperspine-legacy.md").exists())
+            self.assertTrue((base / "desktop" / "PaperSpine" / "dist" / "claude" / "commands" / "paperspine.md").exists())
             self.assertTrue((base / "desktop" / "PaperSpine" / "dist" / "claude" / "skills" / "paper-spine" / "SKILL.md").exists())
             self.assertTrue((base / "desktop" / "PaperSpine" / "dist" / "claude" / "skills" / "paper-spine-ui" / "SKILL.md").exists())
             self.assertTrue((base / "desktop" / "PaperSpine" / "dist" / "claude" / "skills" / "paper-spine-citation" / "SKILL.md").exists())
@@ -352,7 +352,7 @@ class SuiteHardeningTests(unittest.TestCase):
             self.assertTrue((base / "openclaw" / "skills" / "paper-spine-audit" / "SKILL.md").exists())
             self.assertTrue((base / "openclaw" / "skills" / "paper-spine-update" / "SKILL.md").exists())
             self.assertTrue((base / "claude" / "commands" / "paperspine.md").exists())
-            self.assertTrue((base / "claude" / "commands" / "paperspine-legacy.md").exists())
+            self.assertFalse((base / "claude" / "commands" / "paperspine-legacy.md").exists())
             self.assertTrue((base / "config" / "install_state.json").exists())
             self.assertFalse((base / "desktop" / "PaperSpine" / "codex").exists())
             self.assertFalse((base / "desktop" / "PaperSpine" / "claude-code").exists())

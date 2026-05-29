@@ -44,8 +44,11 @@ unless rewrite/build outputs require it.
 - If compilation fails despite an available engine, keep the `.tex`, write the
   first fatal error to `latex_report.md`, and do not claim the artifact check
   passes.
-- If generating Word, run `scripts/word_guard.py final_paper/paper.docx
-  --markdown --output paper_rewriting_output/word_report.md` and fix failures
-  before presenting the Word file as usable.
+- If generating Word for Chinese output, use pandoc with explicit UTF-8:
+  `pandoc main.tex -o paper.docx --from latex --to docx --pdf-engine=xelatex`.
+  Do NOT use intermediate plain-text steps that strip encoding.
+- Run `scripts/word_guard.py final_paper/paper.docx --markdown --output
+  paper_rewriting_output/word_report.md` and fix failures before presenting
+  the Word file as usable. Pay special attention to Chinese encoding warnings.
 
 Read `references/latex-source-control.md` before structural LaTeX edits.
