@@ -27,10 +27,20 @@ LATEX_COMMAND_PATTERN = re.compile(
     r"section|subsection|subsubsection|begin|end|includegraphics|caption|"
     r"footnote|item|hline|toprule|midrule|bottomrule)\b"
 )
+# Any LaTeX macro applied to an argument, e.g. \foo{...} — catches custom macros
+# (\newcommand) that pandoc could not expand, not just the curated list above.
+# Requiring a trailing brace keeps backslashed file paths from matching.
+GENERIC_LATEX_MACRO_PATTERN = re.compile(r"\\[a-zA-Z]+\s*\{")
 # pandoc citeproc leftovers, e.g. [@smith2020] — citations were never resolved.
 CITEPROC_LEFTOVER_PATTERN = re.compile(r"\[@[\w:.\-]+(?:\s*;\s*@[\w:.\-]+)*\]")
-# Inline math left as raw LaTeX (a `$...$` span that contains a backslash macro).
-RAW_MATH_PATTERN = re.compile(r"\$[^$\n]*\\[a-zA-Z]+[^$\n]*\$")
+# Inline math left as raw LaTeX. Either a `$...$` span with a backslash macro,
+# or a tight `$...$` subscript/superscript with no spaces (e.g. $x_i$, $x^2$).
+# Currency like "$5 ... file_name ... $10" needs spaces, so it is not matched.
+RAW_MATH_PATTERN = re.compile(
+    r"\$[^$\n]*\\[a-zA-Z]+[^$\n]*\$|\$[^$\n\s]*[_^][^$\n\s]*\$"
+)
+# pandoc-crossref renders unresolved \ref/\eqref as a literal "[?]".
+BROKEN_CROSSREF = "[?]"
 
 
 @dataclass
@@ -105,12 +115,19 @@ def check_docx(path: Path, min_chars: int) -> WordGuardResult:
             findings.append(f"unresolved placeholder pattern found: {pattern}")
 
     # Formatting correctness: raw LaTeX must not leak into the rendered docx.
-    latex_hits = sorted({m.group(0) for m in LATEX_COMMAND_PATTERN.finditer(text)})
-    if latex_hits:
+    latex_tokens: set[str] = {m.group(0) for m in LATEX_COMMAND_PATTERN.finditer(text)}
+    latex_tokens.update(m.group(0).rstrip("{").strip() for m in GENERIC_LATEX_MACRO_PATTERN.finditer(text))
+    if latex_tokens:
+        sample = ", ".join(sorted(latex_tokens)[:6])
         findings.append(
-            "Unrendered LaTeX commands in text (e.g. "
-            f"{', '.join(latex_hits[:6])}) — pandoc emitted raw source instead of "
-            "rendered output. Check the conversion engine and that custom macros are defined."
+            f"Unrendered LaTeX commands in text (e.g. {sample}) — pandoc emitted raw source "
+            "instead of rendered output. Flatten \\input/\\include and expand custom macros "
+            "(\\newcommand) before conversion."
+        )
+    if BROKEN_CROSSREF in text:
+        findings.append(
+            "Broken cross-references '[?]' — \\ref/\\eqref did not resolve. "
+            "Add `--filter pandoc-crossref` (and matching \\label definitions)."
         )
     citeproc_hits = CITEPROC_LEFTOVER_PATTERN.findall(text)
     if citeproc_hits:

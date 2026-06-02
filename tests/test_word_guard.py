@@ -181,6 +181,45 @@ class WordGuardTests(unittest.TestCase):
             result = run_guard(docx, min_chars=50)
             self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
 
+    def test_custom_macro_with_argument_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            docx = Path(tmp) / "paper.docx"
+            make_docx(docx, [
+                "The result \\mymetric{0.93} exceeds all prior baselines by a wide margin. " * 6,
+            ])
+            result = run_guard(docx, min_chars=50)
+            self.assertEqual(result.returncode, 1, result.stderr + result.stdout)
+            self.assertIn("Unrendered LaTeX commands", result.stdout)
+
+    def test_broken_crossref_marker_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            docx = Path(tmp) / "paper.docx"
+            make_docx(docx, [
+                "The architecture is summarized in Figure [?] of the methods section. " * 6,
+            ])
+            result = run_guard(docx, min_chars=50)
+            self.assertEqual(result.returncode, 1, result.stderr + result.stdout)
+            self.assertIn("Broken cross-references", result.stdout)
+
+    def test_subscript_math_without_backslash_fails(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            docx = Path(tmp) / "paper.docx"
+            make_docx(docx, [
+                "The hidden state $h_t$ updates at each step over the full sequence length. " * 6,
+            ])
+            result = run_guard(docx, min_chars=50)
+            self.assertEqual(result.returncode, 1, result.stderr + result.stdout)
+            self.assertIn("Raw inline LaTeX math", result.stdout)
+
+    def test_currency_with_underscore_identifier_not_flagged(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            docx = Path(tmp) / "paper.docx"
+            make_docx(docx, [
+                "Each file_name row costs $5 to process and $10 to archive in the system. " * 6,
+            ])
+            result = run_guard(docx, min_chars=50)
+            self.assertEqual(result.returncode, 0, result.stderr + result.stdout)
+
 
 if __name__ == "__main__":
     unittest.main()

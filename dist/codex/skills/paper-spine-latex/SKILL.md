@@ -49,7 +49,9 @@ unless rewrite/build outputs require it.
   commands render as formatted references instead of leaking raw LaTeX:
   ```bash
   cd final_paper
-  pandoc main.tex -o paper.docx --from latex --to docx \n    --resource-path=. --extract-media=./media \n    --number-sections --citeproc --bibliography=references.bib
+  pandoc main.tex -o paper.docx --from latex --to docx \
+    --resource-path=. --extract-media=./media \
+    --number-sections --citeproc --bibliography=references.bib
   ```
   - `--citeproc --bibliography=references.bib` renders `\cite{...}` and the
     reference list; omit only when the manuscript has no citations
@@ -58,7 +60,7 @@ unless rewrite/build outputs require it.
   - `--extract-media=./media` embeds images into the docx
   - For house styles (fonts, heading styles, margins), add
     `--reference-doc=reference.docx` built from the target template
-  - `ef`/`utoref` cross-references need the `pandoc-crossref` filter
+  - `\ref`/`\autoref` cross-references need the `pandoc-crossref` filter
     (`--filter pandoc-crossref`); without it they may render as `[?]`
   - Without these flags, pandoc silently drops images or citations, or produces a blank docx
   - Run from `final_paper/` so relative paths in `.tex` resolve correctly
@@ -67,5 +69,18 @@ unless rewrite/build outputs require it.
   paper_rewriting_output/word_report.md` and fix failures before presenting
   the Word file as usable. If word_guard reports 0 paragraphs, check that
   images are in supported formats (PNG/JPG) and the `figures/` directory exists.
+- To keep Word output faithful, prevent these common pandoc errors:
+  - Flatten `\input`/`\include` first (e.g. `latexpand main.tex > flat.tex`),
+    then convert the flattened file; pandoc does not pull sub-files in reliably.
+  - Expand or remove custom `\newcommand`/`\def` macros; pandoc drops macros it
+    cannot resolve, silently losing their content.
+  - Keep tables simple (`tabular`/`booktabs`); `tabularx`, `multirow`, and nested
+    tables often misalign in docx, so open and verify each table.
+  - To match the PDF citation style, pass `--csl=<style>.csl`; citeproc's default
+    differs from the LaTeX `.bst` style.
+  - For Chinese, build `--reference-doc=reference.docx` with a CJK font (e.g.
+    SimSun or Noto Serif CJK) or characters render as boxes.
+  - After conversion, open the docx and confirm headings, equations, figures,
+    tables, and references all rendered.
 
 Read `references/latex-source-control.md` before structural LaTeX edits.

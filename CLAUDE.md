@@ -16,7 +16,7 @@ matrix, then writes/rewrites with LaTeX/PDF output.
 - `dist/openclaw/skills/*`: OpenClaw flat skill suite
 - `src/scripts/*`: shared deterministic scripts (standard library only)
 - `.claude-plugin/*`: Claude Code plugin metadata
-- `tests/*`: 142 tests
+- `tests/*`: 146 tests
 
 ## Suite Skills
 
@@ -45,7 +45,7 @@ Canonical source: `dist/paperspine_version.json`.  Auto-propagated to
 - Keep dist copies synchronized across Claude/Codex/OpenClaw
 - README.md and README.zh-CN.md must stay content-equivalent
 - Do not push to GitHub unless explicitly asked
-- Run `python -m pytest tests` before claiming ready (expect 142 passed)
+- Run `python -m pytest tests` before claiming ready (expect 146 passed)
 
 ## Sync Commands
 
