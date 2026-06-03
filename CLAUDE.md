@@ -44,7 +44,7 @@ Canonical source: `dist/paperspine_version.json`.  Auto-propagated to
 
 - Standard library only for Python scripts
 - Keep dist copies synchronized across Claude/Codex/OpenClaw
-- README.md and README.zh-CN.md must stay content-equivalent
+- README.md (Chinese) and README.en.md (English) must stay content-equivalent
 - Do not push to GitHub unless explicitly asked
 - Run `python -m pytest tests` before claiming ready (expect 158 passed)
 - Single source of truth: edit shared scripts in `src/scripts/`, references in
