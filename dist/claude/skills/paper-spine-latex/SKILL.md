@@ -76,8 +76,9 @@ unless rewrite/build outputs require it.
     cannot resolve, silently losing their content.
   - Keep tables simple (`tabular`/`booktabs`); `tabularx`, `multirow`, and nested
     tables often misalign in docx, so open and verify each table.
-  - To match the PDF citation style, pass `--csl=<style>.csl`; citeproc's default
-    differs from the LaTeX `.bst` style.
+  - Citeproc renders author-date by default, so a numeric LaTeX style (`plain`,
+    `unsrt`, `ieeetr`) renders differently in Word. To keep numbered `[1]`
+    citations, pass a numeric CSL, e.g. `--csl=ieee.csl` or `--csl=vancouver.csl`.
   - For Chinese, build `--reference-doc=reference.docx` with a CJK font (e.g.
     SimSun or Noto Serif CJK) or characters render as boxes.
   - After conversion, open the docx and confirm headings, equations, figures,
