@@ -1,0 +1,20 @@
+{
+  "name": "paperspine-marketplace",
+  "interface": {
+    "displayName": "PaperSpine Marketplace"
+  },
+  "plugins": [
+    {
+      "name": "paper-spine",
+      "source": {
+        "source": "local",
+        "path": "./plugins/paper-spine"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Research"
+    }
+  ]
+}

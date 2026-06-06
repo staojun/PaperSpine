@@ -1,0 +1,40 @@
+{
+  "name": "paper-spine",
+  "version": "3.3.0",
+  "description": "Motivation-driven paper and report writing skill suite for Codex.",
+  "author": {
+    "name": "WUBING2023",
+    "url": "https://github.com/WUBING2023"
+  },
+  "homepage": "https://github.com/WUBING2023/PaperSpine",
+  "repository": "https://github.com/WUBING2023/PaperSpine",
+  "license": "MIT",
+  "keywords": [
+    "academic-writing",
+    "paper-writing",
+    "latex",
+    "research",
+    "reports",
+    "competition-writing"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "PaperSpine",
+    "shortDescription": "Research paper and report writing workflow suite.",
+    "longDescription": "Use PaperSpine to plan, research, cite, write, rewrite, translate, humanize, audit, and package academic papers and reports with evidence-preserving workflows.",
+    "developerName": "WUBING2023",
+    "category": "Research",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Start a PaperSpine paper workflow.",
+      "Rewrite my draft with evidence checks.",
+      "Check PaperSpine for updates."
+    ],
+    "websiteURL": "https://github.com/WUBING2023/PaperSpine",
+    "brandColor": "#2563EB"
+  }
+}
